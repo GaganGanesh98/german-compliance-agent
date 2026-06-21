@@ -4,7 +4,7 @@ from pathlib import Path
 from app.db import bulk_insert_chunks, delete_chunks_for_document, get_connection, upsert_document
 from app.embeddings import Embedder
 from app.ingestion.chunker import TextChunk, chunk_text
-from app.ingestion.loaders import LoadedDocument, load_document
+from app.ingestion.loaders import load_document
 
 
 @dataclass(frozen=True)
