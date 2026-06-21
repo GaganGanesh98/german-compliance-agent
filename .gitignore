@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+backend/.env
+backend/data/corpus/*
+!backend/data/corpus/.gitkeep
