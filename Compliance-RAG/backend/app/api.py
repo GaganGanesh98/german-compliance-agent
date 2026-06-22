@@ -1,8 +1,15 @@
-from fastapi import FastAPI
+from pathlib import Path
+import tempfile
+
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.agent.graph import run_agent
+from app.audit.engine import run_audit
+from app.audit.schema import AuditReport
+from app.embeddings import get_embedder
+from app.ingestion.pipeline import ingest_user_document
 
 app = FastAPI(title="Compliance RAG Agent")
 
@@ -44,3 +51,20 @@ def query(request: QueryRequest) -> QueryResponse:
         citations=result["citations"],
         documents=result["documents"],
     )
+
+
+@app.post("/audit", response_model=AuditReport)
+async def audit(file: UploadFile = File(...)) -> AuditReport:
+    suffix = Path(file.filename or "upload.txt").suffix.lower()
+    if suffix not in {".pdf", ".txt"}:
+        raise HTTPException(status_code=400, detail="Only .pdf and .txt uploads are supported.")
+
+    contents = await file.read()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(contents)
+        tmp_path = Path(tmp.name)
+
+    embedder = get_embedder()
+    document_id = ingest_user_document(tmp_path, embedder)
+    document_title = Path(file.filename or tmp_path.stem).stem
+    return run_audit(str(document_id), document_title)

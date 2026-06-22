@@ -31,7 +31,8 @@ create index if not exists chunks_embedding_hnsw_idx
 create or replace function match_chunks(
     query_embedding vector(1024),
     match_count int,
-    filter_regulation text default null
+    filter_regulation text default null,
+    filter_document_id uuid default null
 )
 returns table (
     content text,
@@ -50,8 +51,8 @@ begin
         1 - (c.embedding <=> query_embedding) as similarity
     from chunks c
     join documents d on d.id = c.document_id
-    where filter_regulation is null
-       or d.regulation_code = filter_regulation
+    where (filter_regulation is null or d.regulation_code = filter_regulation)
+      and (filter_document_id is null or c.document_id = filter_document_id)
     order by c.embedding <=> query_embedding
     limit match_count;
 end;

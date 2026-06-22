@@ -82,12 +82,14 @@ def match_chunks(
     query_embedding: list[float],
     match_count: int,
     filter_regulation: str | None = None,
+    filter_document_id: str | UUID | None = None,
 ) -> list[dict[str, Any]]:
+    doc_id = str(filter_document_id) if filter_document_id is not None else None
     rows = conn.execute(
         """
         select content, article_ref, regulation_code, similarity
-        from match_chunks(%s::vector, %s, %s)
+        from match_chunks(%s::vector, %s, %s, %s::uuid)
         """,
-        (query_embedding, match_count, filter_regulation),
+        (query_embedding, match_count, filter_regulation, doc_id),
     ).fetchall()
     return list(rows)
