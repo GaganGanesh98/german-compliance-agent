@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.audit.checkpoints import GDPR_EMPLOYMENT_CHECKPOINTS, get_checkpoints
-from app.audit.engine import run_audit, sort_findings, summarize_findings
+from app.audit.engine import _validate_excerpt, run_audit, sort_findings, summarize_findings
 from app.audit.schema import AuditFinding, AuditFindingAssessment, Severity, Status
 from app.retrieval import SearchResult
 
@@ -127,3 +127,30 @@ def test_run_audit_with_mocked_llm_and_retrieval(monkeypatch: pytest.MonkeyPatch
     assert finding.status == Status.PARTIAL
     assert finding.contract_excerpt == contract_clause
     assert report.summary["PARTIAL"] == 1
+
+
+def test_validate_excerpt_keeps_verbatim_quote() -> None:
+    hits = [
+        SearchResult(
+            content="The Employer processes employee personal data for payroll and tax reporting.",
+            article_ref=None,
+            regulation_code=None,
+            similarity=0.5,
+        )
+    ]
+    # Whitespace-only differences are tolerated.
+    assert _validate_excerpt("processes employee   personal data for payroll", hits) is not None
+
+
+def test_validate_excerpt_drops_hallucinated_quote() -> None:
+    hits = [
+        SearchResult(
+            content="The Employer processes employee personal data for payroll.",
+            article_ref=None,
+            regulation_code=None,
+            similarity=0.5,
+        )
+    ]
+    # A quote that never appears in the retrieved clauses must be rejected.
+    assert _validate_excerpt("Employee waives all data subject rights.", hits) is None
+    assert _validate_excerpt(None, hits) is None

@@ -36,6 +36,9 @@ class QueryResponse(BaseModel):
     answer: str
     citations: list[Citation]
     documents: list[dict]
+    trace: list[str] = []
+    retrieval_tries: int = 0
+    generation_tries: int = 0
 
 
 @app.get("/health")
@@ -50,6 +53,9 @@ def query(request: QueryRequest) -> QueryResponse:
         answer=result["answer"],
         citations=result["citations"],
         documents=result["documents"],
+        trace=result.get("trace", []),
+        retrieval_tries=result.get("retrieval_tries", 0),
+        generation_tries=result.get("generation_tries", 0),
     )
 
 

@@ -25,12 +25,18 @@ Regulation article excerpts ({regulation_code} {article_ref}):
 Candidate contract clauses from the uploaded document:
 {contract_clauses}
 
+Status definitions (choose the single best fit — do NOT default to PARTIAL when unsure):
+- COMPLIANT: a clause clearly and adequately satisfies the obligation. Minor wording imperfections do not downgrade this.
+- PARTIAL: a clause addresses the obligation but has a real, specific gap or ambiguity. You must name the gap in the rationale.
+- VIOLATION: a clause addresses the topic but in a way that contradicts or breaches the regulation (e.g. consent that is not freely given, an unlawful basis).
+- NOT_ADDRESSED: no clause meaningfully addresses the obligation at all.
+
 Rules:
-- If no contract clause meaningfully addresses the obligation, set status to NOT_ADDRESSED and contract_excerpt to null.
-- contract_excerpt must be a verbatim quote copied exactly from the candidate contract clauses, or null.
-- Do not invent or paraphrase contract text in contract_excerpt.
-- rationale must reference both the contract (if any) and the regulation article.
-- Choose severity by real-world risk (e.g. missing lawful basis or retention = HIGH; minor wording gaps = LOW).
+- Decide COMPLIANT vs PARTIAL on substance: if the clause genuinely covers what the article requires, choose COMPLIANT. Only choose PARTIAL if you can state the concrete missing element.
+- If status is NOT_ADDRESSED, set contract_excerpt to null.
+- contract_excerpt must be a verbatim quote copied exactly from the candidate contract clauses above, or null. Do not invent or paraphrase.
+- rationale must reference both the contract (if any) and the regulation article, and for PARTIAL/VIOLATION must state the specific gap or conflict.
+- Choose severity by real-world risk (e.g. missing lawful basis or retention = HIGH; minor wording gaps = LOW; an addressed-and-compliant obligation = INFO).
 - status must be one of: COMPLIANT, PARTIAL, VIOLATION, NOT_ADDRESSED.
 """
 
@@ -60,13 +66,34 @@ def _format_search_results(results: list[SearchResult]) -> str:
     return "\n\n".join(parts)
 
 
+def _normalize(text: str) -> str:
+    return " ".join(text.split()).lower()
+
+
+def _validate_excerpt(excerpt: str | None, contract_hits: list[SearchResult]) -> str | None:
+    """Keep contract_excerpt only if it is genuinely present (verbatim, modulo
+    whitespace) in the retrieved clauses. Guards against a hallucinated quote."""
+    if not excerpt:
+        return None
+    needle = _normalize(excerpt)
+    if len(needle) < 8:
+        return None
+    for hit in contract_hits:
+        if needle in _normalize(hit.content):
+            return excerpt
+    return None
+
+
 def _build_finding(
     checkpoint: Checkpoint,
     assessment: AuditFindingAssessment,
+    contract_hits: list[SearchResult],
 ) -> AuditFinding:
     excerpt = assessment.contract_excerpt
     if assessment.status == Status.NOT_ADDRESSED:
         excerpt = None
+    else:
+        excerpt = _validate_excerpt(excerpt, contract_hits)
 
     return AuditFinding(
         checkpoint_id=checkpoint.id,
@@ -110,7 +137,7 @@ def _assess_checkpoint(
     llm = get_llm()
     structured_llm = llm.with_structured_output(AuditFindingAssessment)
     assessment = structured_llm.invoke(prompt)
-    return _build_finding(checkpoint, assessment)
+    return _build_finding(checkpoint, assessment, contract_hits)
 
 
 def sort_findings(findings: list[AuditFinding]) -> list[AuditFinding]:
