@@ -1,0 +1,26 @@
+EMPLOYMENT CONTRACT
+
+This Employment Contract is entered into between Acme GmbH ("Employer") and the Employee.
+
+1. Position and Duties
+The Employee is hired as Software Engineer and agrees to perform duties assigned by the Employer.
+
+2. Compensation
+The Employee receives a monthly gross salary of EUR 5,500, paid on the last business day of each month.
+
+3. Working Hours
+Normal working hours are 40 hours per week, Monday to Friday, in accordance with applicable law.
+
+4. Personal Data Processing
+The Employer processes employee personal data for payroll, tax reporting, and performance of this employment contract.
+The Employee consents to the processing of personal data necessary for HR administration and may withdraw consent
+by written notice to hr@acme.example, subject to legal limitations.
+
+5. Confidentiality
+The Employee must keep confidential all business information learned during employment.
+
+6. Termination
+Either party may terminate this contract with three months' notice to the end of a calendar month.
+
+7. Governing Law
+This contract is governed by the laws of Germany.

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from uuid import UUID
 
 from app.db import bulk_insert_chunks, delete_chunks_for_document, get_connection, upsert_document
 from app.embeddings import Embedder
@@ -12,6 +13,7 @@ class IngestionResult:
     title: str
     chunk_count: int
     token_count: int
+    document_id: UUID
 
 
 @dataclass(frozen=True)
@@ -22,24 +24,29 @@ class IngestionSummary:
     results: list[IngestionResult]
 
 
-def ingest_file(path: Path, embedder: Embedder) -> IngestionResult:
+def ingest_file(
+    path: Path,
+    embedder: Embedder,
+    *,
+    source_type: str = "regulation",
+) -> IngestionResult:
     loaded = load_document(path)
     chunks = chunk_text(loaded.raw_text)
-    if not chunks:
-        return IngestionResult(title=loaded.title, chunk_count=0, token_count=0)
-
-    embeddings = embedder.embed_documents([chunk.content for chunk in chunks])
-    chunk_rows = _build_chunk_rows(chunks, embeddings)
 
     with get_connection() as conn:
         document_id = upsert_document(
             conn,
             title=loaded.title,
-            source_type="regulation",
-            regulation_code=loaded.regulation_code,
+            source_type=source_type,
+            regulation_code=loaded.regulation_code if source_type == "regulation" else None,
         )
         delete_chunks_for_document(conn, document_id)
-        bulk_insert_chunks(conn, document_id=document_id, chunks=chunk_rows)
+
+        if chunks:
+            embeddings = embedder.embed_documents([chunk.content for chunk in chunks])
+            chunk_rows = _build_chunk_rows(chunks, embeddings)
+            bulk_insert_chunks(conn, document_id=document_id, chunks=chunk_rows)
+
         conn.commit()
 
     token_count = sum(chunk.token_count for chunk in chunks)
@@ -47,7 +54,13 @@ def ingest_file(path: Path, embedder: Embedder) -> IngestionResult:
         title=loaded.title,
         chunk_count=len(chunks),
         token_count=token_count,
+        document_id=document_id,
     )
+
+
+def ingest_user_document(path: Path, embedder: Embedder) -> UUID:
+    result = ingest_file(path, embedder, source_type="user_upload")
+    return result.document_id
 
 
 def ingest_directory(source_dir: Path, embedder: Embedder) -> IngestionSummary:

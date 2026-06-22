@@ -17,6 +17,7 @@ def similarity_search(
     *,
     k: int = 5,
     regulation: str | None = None,
+    document_id: str | None = None,
 ) -> list[SearchResult]:
     query_embedding = embedder.embed_query(query)
     with get_connection() as conn:
@@ -25,6 +26,7 @@ def similarity_search(
             query_embedding=query_embedding,
             match_count=k,
             filter_regulation=regulation,
+            filter_document_id=document_id,
         )
 
     return [
