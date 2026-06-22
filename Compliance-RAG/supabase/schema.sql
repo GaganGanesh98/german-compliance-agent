@@ -10,7 +10,7 @@ create table if not exists documents (
     created_at timestamptz default now()
 );
 
--- Chunks table with embeddings (Jina v3 default dimension: 1024)
+-- Chunks table with embeddings (Gemini embedding-001 @ 1024 dims via MRL)
 create table if not exists chunks (
     id uuid primary key default gen_random_uuid(),
     document_id uuid not null references documents(id) on delete cascade,

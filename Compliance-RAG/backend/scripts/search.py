@@ -1,6 +1,6 @@
 import argparse
 
-from app.embeddings import JinaEmbedder
+from app.embeddings import get_embedder
 from app.retrieval import similarity_search
 
 
@@ -16,7 +16,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    embedder = JinaEmbedder()
+    embedder = get_embedder()
     results = similarity_search(
         args.query,
         embedder,

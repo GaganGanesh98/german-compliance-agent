@@ -1,13 +1,13 @@
 # German Compliance Audit Agent
 
-Phase 1 delivers a typed Python ingestion and retrieval pipeline for German/EU regulation documents. It loads PDFs or text files, chunks them by article, embeds them with Jina v3, stores vectors in Supabase Postgres (pgvector), and retrieves relevant chunks from a CLI.
+Phase 1 delivers a typed Python ingestion and retrieval pipeline for German/EU regulation documents. It loads PDFs or text files, chunks them by article, embeds them with **Google Gemini** (`gemini-embedding-001`), stores vectors in Supabase Postgres (pgvector), and retrieves relevant chunks from a CLI.
 
 ## Stack
 
 - Python 3.11+
 - FastAPI (foundation for later phases)
 - Supabase Postgres + pgvector (direct `psycopg` connection)
-- Jina Embeddings v3 (HTTP API)
+- Google Gemini Embeddings (`gemini-embedding-001`, 1024-dim via MRL; free tier)
 
 ## Setup
 
@@ -29,7 +29,7 @@ cp .env.example .env
 Fill in:
 
 - `DATABASE_URL` — use the **Session pooler** connection string from Supabase → Connect (IPv4-friendly).
-- `JINA_API_KEY` — from jina.ai.
+- `GOOGLE_API_KEY` — from [Google AI Studio](https://aistudio.google.com/app/apikey) (embeddings).
 - `GROQ_API_KEY` — reserved for Phase 2.
 
 3. Apply the database schema in the Supabase SQL editor:

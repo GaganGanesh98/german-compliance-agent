@@ -5,6 +5,7 @@ psycopg[binary]
 pgvector
 httpx
 pypdf
+beautifulsoup4
 python-dotenv
 tiktoken
 pytest
