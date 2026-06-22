@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from app.embeddings import JinaEmbedder
+from app.embeddings import get_embedder
 from app.ingestion.pipeline import ingest_directory
 
 
@@ -18,7 +18,7 @@ def main() -> None:
     if not args.source.exists():
         raise SystemExit(f"Source directory not found: {args.source}")
 
-    embedder = JinaEmbedder()
+    embedder = get_embedder()
     summary = ingest_directory(args.source, embedder)
 
     print(f"Ingested {summary.documents} document(s), {summary.chunks} chunk(s), {summary.tokens} token(s).")

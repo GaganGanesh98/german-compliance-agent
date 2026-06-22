@@ -37,3 +37,15 @@ def test_chunker_assigns_sequential_indices() -> None:
     chunks = chunk_text(SAMPLE_TEXT)
     indices = [chunk.chunk_index for chunk in chunks]
     assert indices == list(range(len(chunks)))
+
+
+def test_chunker_retains_preamble() -> None:
+    chunks = chunk_text(SAMPLE_TEXT)
+    preamble_chunks = [chunk for chunk in chunks if chunk.article_ref is None]
+    assert any("Preamble text before articles" in chunk.content for chunk in preamble_chunks)
+
+
+def test_chunker_detects_indented_boundaries() -> None:
+    indented = "   Article 9\nSpecial categories of personal data.\nProcessing is prohibited."
+    chunks = chunk_text(indented)
+    assert any(chunk.article_ref == "Art. 9" for chunk in chunks)

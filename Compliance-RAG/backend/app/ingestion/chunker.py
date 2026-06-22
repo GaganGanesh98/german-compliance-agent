@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import tiktoken
 
 ARTICLE_BOUNDARY_PATTERN = re.compile(
-    r"(?m)^(?:Article\s+\d+|Art\.\s*\d+|§\s*\d+)\b",
+    r"(?m)^[ \t]*(?:Article\s+\d+|Art\.\s*\d+|§\s*\d+)\b",
     re.IGNORECASE,
 )
 ARTICLE_REF_PATTERN = re.compile(
@@ -97,11 +97,21 @@ def chunk_text(
         ]
 
     article_sections: list[tuple[str | None, str]] = []
+
+    # Retain any preamble/recitals before the first article boundary as an
+    # unattributed section (article_ref=None) rather than dropping it.
+    first_start = boundaries[0].start()
+    if first_start > 0:
+        preamble = normalized[:first_start].strip()
+        if preamble:
+            article_sections.append((None, preamble))
+
     for index, match in enumerate(boundaries):
         start = match.start()
         end = boundaries[index + 1].start() if index + 1 < len(boundaries) else len(normalized)
         section = normalized[start:end].strip()
-        article_sections.append((_extract_article_ref(section), section))
+        if section:
+            article_sections.append((_extract_article_ref(section), section))
 
     chunks: list[TextChunk] = []
     chunk_index = 0
