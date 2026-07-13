@@ -72,7 +72,10 @@ def test_generate_injects_finding_context(monkeypatch: pytest.MonkeyPatch) -> No
 
     prompt = _capture_generate_prompt(monkeypatch, state)
 
-    assert "Audit finding:" in prompt
+    # The finding is fenced and framed as untrusted data, not instructions.
+    assert "BEGIN AUDIT FINDING" in prompt
+    assert "END AUDIT FINDING" in prompt
+    assert "untrusted" in prompt
     assert finding in prompt
 
 
@@ -81,7 +84,7 @@ def test_generate_omits_finding_context_when_absent(monkeypatch: pytest.MonkeyPa
 
     prompt = _capture_generate_prompt(monkeypatch, state)
 
-    assert "Audit finding:" not in prompt
+    assert "BEGIN AUDIT FINDING" not in prompt
     # Prompt body is byte-identical to the no-context prompt.
     assert prompt == GENERATE_PROMPT.format(
         finding_context="",
