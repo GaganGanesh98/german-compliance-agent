@@ -29,12 +29,21 @@ Rules:
 - Cite supporting articles inline as [<REGULATION_CODE> <article_ref>], e.g. [GDPR Art. 6].
 - If the context does not contain enough information, say plainly that you could not find this in the regulations. Do not invent facts.
 - Be concise and direct.
-
+{finding_context}
 Question:
 {question}
 
 Context:
 {context}
+"""
+
+FINDING_CONTEXT_BLOCK = """
+The user is asking a follow-up about a specific audit finding. Use it to
+understand what they are referring to, but ground every claim in the regulation
+excerpts below — do not treat the finding as a source of regulatory fact.
+
+Audit finding:
+{finding_context}
 """
 
 GRADE_GENERATION_PROMPT = """You evaluate answers from a legal RAG assistant.

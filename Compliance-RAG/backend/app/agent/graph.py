@@ -74,12 +74,17 @@ def get_graph():
     return _graph
 
 
-def run_agent(question: str, regulation: str | None = None) -> dict:
+def run_agent(
+    question: str,
+    regulation: str | None = None,
+    finding_context: str | None = None,
+) -> dict:
     graph = get_graph()
     initial_state: GraphState = {
         "question": question,
         "original_question": question,
         "regulation": regulation,
+        "finding_context": finding_context,
         "documents": [],
         "generation": "",
         "retrieval_tries": 0,
