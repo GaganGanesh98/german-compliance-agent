@@ -25,6 +25,7 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     question: str
     regulation: str | None = None
+    finding_context: str | None = None
 
 
 class Citation(BaseModel):
@@ -48,7 +49,11 @@ def health() -> dict[str, str]:
 
 @app.post("/query", response_model=QueryResponse)
 def query(request: QueryRequest) -> QueryResponse:
-    result = run_agent(request.question, regulation=request.regulation)
+    result = run_agent(
+        request.question,
+        regulation=request.regulation,
+        finding_context=request.finding_context,
+    )
     return QueryResponse(
         answer=result["answer"],
         citations=result["citations"],
