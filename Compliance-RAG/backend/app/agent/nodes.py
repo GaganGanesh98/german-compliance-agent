@@ -5,6 +5,7 @@ from typing import Any
 from langgraph.graph import END
 
 from app.agent.prompts import (
+    FINDING_CONTEXT_BLOCK,
     GENERATE_PROMPT,
     GRADE_DOCUMENTS_BATCH_PROMPT,
     GRADE_GENERATION_PROMPT,
@@ -98,7 +99,14 @@ def transform_query(state: GraphState) -> dict:
 def generate(state: GraphState) -> dict:
     llm = get_llm()
     context = _format_documents(state.get("documents", []))
+    finding_context = state.get("finding_context")
+    finding_block = (
+        FINDING_CONTEXT_BLOCK.format(finding_context=finding_context)
+        if finding_context
+        else ""
+    )
     prompt = GENERATE_PROMPT.format(
+        finding_context=finding_block,
         question=state["original_question"],
         context=context,
     )

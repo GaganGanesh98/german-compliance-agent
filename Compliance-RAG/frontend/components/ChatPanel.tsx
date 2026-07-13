@@ -1,17 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AnswerWithCitations } from "@/components/AnswerWithCitations";
 import { SourcesPanel } from "@/components/SourcesPanel";
-import { ApiError, askQuestion, type QueryResponse } from "@/lib/api";
+import {
+  ApiError,
+  askQuestion,
+  takePendingFollowUp,
+  type QueryResponse,
+} from "@/lib/api";
 
 export function ChatPanel() {
   const [question, setQuestion] = useState("");
   const [regulation, setRegulation] = useState<string>("GDPR");
+  const [findingContext, setFindingContext] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<QueryResponse | null>(null);
+
+  // Consume a pending "Ask a follow-up" handoff from the Audit page. Reading
+  // clears sessionStorage, so a stale finding can't leak into a later unrelated
+  // chat (e.g. a fresh /ask visit).
+  useEffect(() => {
+    const pending = takePendingFollowUp();
+    if (!pending) {
+      return;
+    }
+    /* eslint-disable react-hooks/set-state-in-effect --
+       One-time hydration from sessionStorage, a per-tab browser store that is
+       unavailable during SSR. A lazy useState initializer can't read it without a
+       hydration mismatch, so the read must happen after mount. Runs once. */
+    setQuestion(pending.question);
+    setRegulation(pending.regulation);
+    setFindingContext(pending.findingContext);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,7 +48,14 @@ export function ChatPanel() {
     setError(null);
 
     try {
-      const result = await askQuestion(trimmed, regulation === "ALL" ? null : regulation);
+      const result = await askQuestion(
+        trimmed,
+        regulation === "ALL" ? null : regulation,
+        findingContext,
+      );
+      // The finding context belongs to this prefilled follow-up only; drop it so
+      // a subsequent, unrelated question in the same session doesn't carry it.
+      setFindingContext(null);
       setResponse(result);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -49,6 +80,12 @@ export function ChatPanel() {
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {findingContext && (
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+            Following up on an audit finding — the finding&rsquo;s context is attached to your
+            next question.
+          </div>
+        )}
         <div>
           <label htmlFor="question" className="mb-2 block text-sm font-medium text-zinc-700">
             Your question
